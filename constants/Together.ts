@@ -73,6 +73,18 @@ export const THEME_FONTS = [
   { key: 'Pacifico', label: 'Pacifico', preview: 'Our Love Story' },
 ];
 
+// Nunito font family — loaded in app/_layout.tsx via @expo-google-fonts/nunito
+export const FONTS = {
+  regular: 'Nunito_400Regular',
+  medium: 'Nunito_500Medium',
+  semiBold: 'Nunito_600SemiBold',
+  bold: 'Nunito_700Bold',
+  extraBold: 'Nunito_800ExtraBold',
+  black: 'Nunito_900Black',
+  regularItalic: 'Nunito_400Regular_Italic',
+  boldItalic: 'Nunito_700Bold_Italic',
+};
+
 export function formatDate(dateStr: string | undefined | null): string {
   if (!dateStr) return '';
   try {

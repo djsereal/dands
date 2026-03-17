@@ -1,12 +1,11 @@
 import "react-native-reanimated";
 import React, { useEffect } from "react";
-import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useColorScheme } from "react-native";
+import { useColorScheme, Text, TextInput } from "react-native";
 import {
   DarkTheme,
   DefaultTheme,
@@ -15,6 +14,17 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider as TogetherThemeProvider } from "@/contexts/ThemeContext";
+import {
+  useFonts,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+  Nunito_900Black,
+  Nunito_400Regular_Italic,
+  Nunito_700Bold_Italic,
+} from "@expo-google-fonts/nunito";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -43,6 +53,15 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
 function RootLayoutInner() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
+    Nunito_400Regular_Italic,
+    Nunito_700Bold_Italic,
+    // Keep SpaceMono for ErrorBoundary monospace fallback
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
@@ -53,6 +72,13 @@ function RootLayoutInner() {
   }, [loaded]);
 
   if (!loaded) return null;
+
+  // Apply Nunito as the default font for all Text and TextInput components globally
+  const defaultTextStyle: any = { fontFamily: "Nunito_400Regular" };
+  if ((Text as any).defaultProps == null) (Text as any).defaultProps = {};
+  (Text as any).defaultProps.style = defaultTextStyle;
+  if ((TextInput as any).defaultProps == null) (TextInput as any).defaultProps = {};
+  (TextInput as any).defaultProps.style = defaultTextStyle;
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

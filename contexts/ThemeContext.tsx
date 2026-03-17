@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authenticatedGet, authenticatedPatch } from '@/utils/api';
-import { COLORS } from '@/constants/Together';
+import { COLORS, FONTS } from '@/constants/Together';
 
 interface CoupleTheme {
   themeColor: string;
@@ -16,7 +16,7 @@ interface CoupleTheme {
 
 const ThemeContext = createContext<CoupleTheme>({
   themeColor: COLORS.primary,
-  themeFont: 'Nunito',
+  themeFont: FONTS.regular,
   partnerName: '',
   coupleId: null,
   anniversaryDate: null,
@@ -28,7 +28,7 @@ const ThemeContext = createContext<CoupleTheme>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeColor, setThemeColor] = useState(COLORS.primary);
-  const [themeFont, setThemeFont] = useState('Nunito');
+  const [themeFont, setThemeFont] = useState(FONTS.regular);
   const [partnerName, setPartnerName] = useState('');
   const [coupleId, setCoupleId] = useState<string | null>(null);
   const [anniversaryDate, setAnniversaryDate] = useState<string | null>(null);

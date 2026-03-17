@@ -1,4 +1,5 @@
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { FONTS } from '@/constants/Together';
 
 export const colors = {
   primary: '#162456',    // Material Blue
@@ -48,6 +49,7 @@ export const commonStyles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
+    fontFamily: FONTS.extraBold,
     textAlign: 'center',
     color: colors.text,
     marginBottom: 10
@@ -55,6 +57,7 @@ export const commonStyles = StyleSheet.create({
   text: {
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: FONTS.medium,
     color: colors.text,
     marginBottom: 8,
     lineHeight: 24,
