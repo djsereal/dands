@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { authenticatedPatch, authenticatedPost } from "@/utils/api";
+import { authenticatedGet, authenticatedPatch, authenticatedPost } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { COLORS, THEME_COLORS, THEME_FONTS, formatDate } from "@/constants/Together";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { LoadingButton } from "@/components/LoadingButton";
-import { Copy, Check, Calendar, LogOut, Palette, Type, Mail } from "lucide-react-native";
+import { Copy, Check, Calendar, LogOut, Palette, Type, Mail, ShieldCheck, ChevronRight } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
 
 export default function SettingsScreen() {
@@ -43,6 +43,24 @@ export default function SettingsScreen() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<"idle" | "success" | "error">("idle");
   const [inviteError, setInviteError] = useState("");
+
+  // 2FA status
+  const [twoFaVerified, setTwoFaVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const fetch2FAStatus = async () => {
+      console.log("[Settings] Fetching 2FA status");
+      try {
+        const res = await authenticatedGet<{ phone: string | null; phone_verified: boolean }>("/api/2fa/status");
+        console.log("[Settings] 2FA status:", res);
+        setTwoFaVerified(res.phone_verified);
+      } catch (e) {
+        console.error("[Settings] Failed to fetch 2FA status:", e);
+        setTwoFaVerified(false);
+      }
+    };
+    fetch2FAStatus();
+  }, []);
 
   const handleEmailInvite = async () => {
     if (!inviteEmail.trim()) {
@@ -281,6 +299,55 @@ export default function SettingsScreen() {
             loadingColor="#fff"
           />
         </View>
+
+        {/* Two-Factor Authentication */}
+        <AnimatedPressable
+          onPress={() => {
+            console.log("[Settings] Two-Factor Authentication row pressed");
+            router.push("/two-factor");
+          }}
+          style={{
+            backgroundColor: COLORS.surface,
+            borderRadius: 20,
+            padding: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 14,
+            boxShadow: COLORS.cardShadow,
+          }}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: `${selectedColor}18`,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ShieldCheck size={20} color={selectedColor} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 15, fontWeight: "800", color: COLORS.text }}>
+              Two-Factor Authentication
+            </Text>
+            {twoFaVerified === null ? (
+              <Text style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 2 }}>
+                Loading...
+              </Text>
+            ) : twoFaVerified ? (
+              <Text style={{ fontSize: 13, color: COLORS.success, fontWeight: "700", marginTop: 2 }}>
+                Enabled ✓
+              </Text>
+            ) : (
+              <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 2 }}>
+                Not set up
+              </Text>
+            )}
+          </View>
+          <ChevronRight size={18} color={COLORS.textMuted} />
+        </AnimatedPressable>
 
         {/* Save Button */}
         <AnimatedPressable

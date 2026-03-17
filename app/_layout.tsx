@@ -114,6 +114,12 @@ function RootLayoutInner() {
                   presentation: "modal",
                 }}
               />
+              <Stack.Screen
+                name="two-factor"
+                options={{
+                  headerShown: false,
+                }}
+              />
             </Stack>
           </NavigationGuard>
           <SystemBars style="auto" />
