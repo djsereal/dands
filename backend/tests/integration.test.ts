@@ -85,6 +85,39 @@ describe("API Integration Tests", () => {
     await expectStatus(res, 400, 404);
   });
 
+  test("Send invite email to join couple", async () => {
+    const res = await authenticatedApi("/api/couples/invite", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "partner@example.com",
+      }),
+    });
+    await expectStatus(res, 200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+  });
+
+  test("Send invite with invalid email format returns 400", async () => {
+    const res = await authenticatedApi("/api/couples/invite", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "not-an-email",
+      }),
+    });
+    await expectStatus(res, 400);
+  });
+
+  test("Send invite without email field returns 400", async () => {
+    const res = await authenticatedApi("/api/couples/invite", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    await expectStatus(res, 400);
+  });
+
   // === Memories ===
   test("Create a memory", async () => {
     const res = await authenticatedApi("/api/memories", authToken, {
