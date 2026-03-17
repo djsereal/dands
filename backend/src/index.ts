@@ -11,6 +11,7 @@ import { registerGoalsRoutes } from './routes/goals.js';
 import { registerJournalRoutes } from './routes/journal.js';
 import { registerTipsRoutes, seedRelationshipTips } from './routes/tips.js';
 import { registerIntimacyRoutes } from './routes/intimacy.js';
+import { registerTwoFARoutes } from './routes/twofa.js';
 
 const schema = { ...appSchema, ...authSchema };
 
@@ -31,6 +32,7 @@ registerGoalsRoutes(app);
 registerJournalRoutes(app);
 registerTipsRoutes(app);
 registerIntimacyRoutes(app);
+registerTwoFARoutes(app);
 
 // Seed relationship tips
 await seedRelationshipTips(app);

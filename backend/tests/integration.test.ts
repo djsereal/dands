@@ -620,4 +620,58 @@ describe("API Integration Tests", () => {
     const data = await res.json();
     expect(Array.isArray(data.suggestions)).toBe(true);
   });
+
+  // === 2FA ===
+  test("Send 2FA verification code with valid phone", async () => {
+    const res = await authenticatedApi("/api/2fa/send", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+12025551234",
+      }),
+    });
+    await expectStatus(res, 200);
+    const data = await res.json();
+    expect(data.success).toBeDefined();
+  });
+
+  test("Send 2FA code without required phone returns 400", async () => {
+    const res = await authenticatedApi("/api/2fa/send", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    await expectStatus(res, 400);
+  });
+
+  test("Get 2FA status", async () => {
+    const res = await authenticatedApi("/api/2fa/status", authToken);
+    await expectStatus(res, 200);
+    const data = await res.json();
+    expect(data.phone_verified).toBeDefined();
+  });
+
+  test("Verify 2FA code", async () => {
+    const res = await authenticatedApi("/api/2fa/verify", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+12025551234",
+        code: "123456",
+      }),
+    });
+    // Can be 200 if code is correct or 400 if code is invalid/expired
+    await expectStatus(res, 200, 400);
+  });
+
+  test("Verify 2FA code without required fields returns 400", async () => {
+    const res = await authenticatedApi("/api/2fa/verify", authToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: "+12025551234",
+      }),
+    });
+    await expectStatus(res, 400);
+  });
 });

@@ -196,3 +196,17 @@ export const fantasies = pgTable("fantasies", {
     .defaultNow()
     .notNull(),
 });
+
+export const sms_codes = pgTable("sms_codes", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  phone: text("phone").notNull(),
+  code: text("code").notNull(),
+  expires_at: timestamp("expires_at"),
+  verified: boolean("verified").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
