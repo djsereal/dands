@@ -16,7 +16,8 @@ import { authenticatedPost } from "@/utils/api";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { COLORS, THEME_COLORS, THEME_FONTS, formatDate } from "@/constants/Together";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
-import { Copy, Check, Calendar } from "lucide-react-native";
+import { LoadingButton } from "@/components/LoadingButton";
+import { Copy, Check, Calendar, Mail } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
 
 type Mode = "choose" | "create" | "join";
@@ -32,6 +33,35 @@ export default function CoupleSetupScreen() {
   const [inviteCode, setInviteCode] = useState("");
   const [createdCode, setCreatedCode] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Email invite
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "success" | "error">("idle");
+  const [inviteError, setInviteError] = useState("");
+
+  const handleEmailInvite = async () => {
+    if (!inviteEmail.trim()) {
+      setInviteError("Please enter an email address");
+      return;
+    }
+    console.log("[CoupleSetup] Send invite pressed, email:", inviteEmail.trim());
+    setInviteLoading(true);
+    setInviteStatus("idle");
+    setInviteError("");
+    try {
+      await authenticatedPost("/api/couples/invite", { email: inviteEmail.trim() });
+      console.log("[CoupleSetup] Invite sent successfully");
+      setInviteStatus("success");
+      setInviteEmail("");
+    } catch (e: any) {
+      console.error("[CoupleSetup] Invite error:", e);
+      setInviteStatus("error");
+      setInviteError(e?.message || "Failed to send invite");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   // Create form
   const [anniversaryDate, setAnniversaryDate] = useState(new Date());
@@ -130,10 +160,61 @@ export default function CoupleSetupScreen() {
               <Text style={{ color: "#fff", fontWeight: "700" }}>{copied ? "Copied!" : "Copy Code"}</Text>
             </AnimatedPressable>
           </View>
+          {/* Email Invite */}
+          <View style={{
+            marginTop: 24,
+            backgroundColor: COLORS.surface,
+            borderRadius: 20,
+            padding: 24,
+            width: "100%",
+            boxShadow: COLORS.cardShadow,
+          }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <Mail size={18} color={COLORS.primary} />
+              <Text style={{ fontSize: 16, fontWeight: "800", color: COLORS.text }}>Invite Partner by Email</Text>
+            </View>
+            <TextInput
+              placeholder="partner@email.com"
+              placeholderTextColor={COLORS.textMuted}
+              value={inviteEmail}
+              onChangeText={(t) => { setInviteEmail(t); setInviteStatus("idle"); setInviteError(""); }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={{
+                backgroundColor: COLORS.surfaceAlt,
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: COLORS.border,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                fontSize: 15,
+                color: COLORS.text,
+                marginBottom: 12,
+              }}
+            />
+            {inviteStatus === "success" ? (
+              <Text style={{ color: COLORS.success, fontSize: 14, fontWeight: "600", textAlign: "center", marginBottom: 8 }}>
+                Invite sent! 💕
+              </Text>
+            ) : inviteStatus === "error" ? (
+              <Text style={{ color: COLORS.error, fontSize: 14, textAlign: "center", marginBottom: 8 }}>
+                {inviteError}
+              </Text>
+            ) : null}
+            <LoadingButton
+              title="Send Invite"
+              loading={inviteLoading}
+              onPress={handleEmailInvite}
+              style={{ backgroundColor: COLORS.primary }}
+              loadingColor="#fff"
+            />
+          </View>
+
           <AnimatedPressable
             onPress={() => router.replace("/(tabs)/(home)")}
             style={{
-              marginTop: 24,
+              marginTop: 16,
               backgroundColor: COLORS.primary,
               borderRadius: 16,
               paddingVertical: 14,

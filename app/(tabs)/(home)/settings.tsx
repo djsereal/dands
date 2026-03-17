@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  TextInput,
   ScrollView,
   Pressable,
   ActivityIndicator,
@@ -11,12 +12,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { authenticatedPatch } from "@/utils/api";
+import { authenticatedPatch, authenticatedPost } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppTheme } from "@/contexts/ThemeContext";
 import { COLORS, THEME_COLORS, THEME_FONTS, formatDate } from "@/constants/Together";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
-import { Copy, Check, Calendar, LogOut, Palette, Type } from "lucide-react-native";
+import { LoadingButton } from "@/components/LoadingButton";
+import { Copy, Check, Calendar, LogOut, Palette, Type, Mail } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
 
 export default function SettingsScreen() {
@@ -35,6 +37,35 @@ export default function SettingsScreen() {
     anniversaryDate ? new Date(anniversaryDate) : new Date()
   );
   const [saved, setSaved] = useState(false);
+
+  // Email invite
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "success" | "error">("idle");
+  const [inviteError, setInviteError] = useState("");
+
+  const handleEmailInvite = async () => {
+    if (!inviteEmail.trim()) {
+      setInviteError("Please enter an email address");
+      return;
+    }
+    console.log("[Settings] Send invite pressed, email:", inviteEmail.trim());
+    setInviteLoading(true);
+    setInviteStatus("idle");
+    setInviteError("");
+    try {
+      await authenticatedPost("/api/couples/invite", { email: inviteEmail.trim() });
+      console.log("[Settings] Invite sent successfully");
+      setInviteStatus("success");
+      setInviteEmail("");
+    } catch (e: any) {
+      console.error("[Settings] Invite error:", e);
+      setInviteStatus("error");
+      setInviteError(e?.message || "Failed to send invite");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   const maxWidth = Math.min(width, 600);
 
@@ -206,6 +237,50 @@ export default function SettingsScreen() {
             </View>
           </View>
         ) : null}
+
+        {/* Invite Partner by Email */}
+        <View style={{ backgroundColor: COLORS.surface, borderRadius: 20, padding: 20, boxShadow: COLORS.cardShadow }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <Mail size={18} color={selectedColor} />
+            <Text style={{ fontSize: 16, fontWeight: "800", color: COLORS.text }}>Invite Partner by Email</Text>
+          </View>
+          <TextInput
+            placeholder="partner@email.com"
+            placeholderTextColor={COLORS.textMuted}
+            value={inviteEmail}
+            onChangeText={(t) => { setInviteEmail(t); setInviteStatus("idle"); setInviteError(""); }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={{
+              backgroundColor: COLORS.surfaceAlt,
+              borderRadius: 12,
+              borderWidth: 1.5,
+              borderColor: COLORS.border,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+              fontSize: 15,
+              color: COLORS.text,
+              marginBottom: 12,
+            }}
+          />
+          {inviteStatus === "success" ? (
+            <Text style={{ color: COLORS.success, fontSize: 14, fontWeight: "600", textAlign: "center", marginBottom: 8 }}>
+              Invite sent! 💕
+            </Text>
+          ) : inviteStatus === "error" ? (
+            <Text style={{ color: COLORS.error, fontSize: 14, textAlign: "center", marginBottom: 8 }}>
+              {inviteError}
+            </Text>
+          ) : null}
+          <LoadingButton
+            title="Send Invite"
+            loading={inviteLoading}
+            onPress={handleEmailInvite}
+            style={{ backgroundColor: selectedColor }}
+            loadingColor="#fff"
+          />
+        </View>
 
         {/* Save Button */}
         <AnimatedPressable
