@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authenticatedGet, authenticatedPatch } from '@/utils/api';
 import { COLORS, FONTS } from '@/constants/Together';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CoupleTheme {
   themeColor: string;
@@ -27,6 +28,7 @@ const ThemeContext = createContext<CoupleTheme>({
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [themeColor, setThemeColor] = useState(COLORS.primary);
   const [themeFont, setThemeFont] = useState(FONTS.regular);
   const [partnerName, setPartnerName] = useState('');
@@ -36,6 +38,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [hasCouple, setHasCouple] = useState(false);
 
   const refreshCouple = async () => {
+    // Don't attempt to fetch couple data if not authenticated
+    if (!user) {
+      setHasCouple(false);
+      setCoupleId(null);
+      setAnniversaryDate(null);
+      setInviteCode(null);
+      return;
+    }
+    console.log('[ThemeContext] Refreshing couple data for user:', user.id);
     try {
       const data = await authenticatedGet('/api/couples/me');
       if (data && data.id) {
@@ -46,27 +57,31 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (data.theme_color) setThemeColor(data.theme_color);
         if (data.theme_font) setThemeFont(data.theme_font);
         if (data.partner_name) setPartnerName(data.partner_name);
+        console.log('[ThemeContext] Couple loaded, id:', data.id, 'hasCouple: true');
       } else {
         setHasCouple(false);
+        console.log('[ThemeContext] No couple found for user');
       }
-    } catch {
+    } catch (e) {
+      console.error('[ThemeContext] refreshCouple error:', e);
       setHasCouple(false);
     }
   };
 
   const updateTheme = async (color: string, font: string) => {
+    console.log('[ThemeContext] Updating theme, color:', color, 'font:', font);
     setThemeColor(color);
     setThemeFont(font);
-    try {
-      await authenticatedPatch('/api/couples/me', { theme_color: color, theme_font: font });
-    } catch (e) {
-      console.error('[ThemeContext] updateTheme error:', e);
-    }
+    // Note: the caller (settings.tsx) is responsible for the API call via authenticatedPatch
+    // This function only updates local state to avoid double-patching
   };
 
+  // Fetch couple data whenever auth state changes (user logs in/out)
   useEffect(() => {
-    refreshCouple();
-  }, []);
+    if (!authLoading) {
+      refreshCouple();
+    }
+  }, [user, authLoading]);
 
   return (
     <ThemeContext.Provider value={{

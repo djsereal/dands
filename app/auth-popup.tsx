@@ -4,17 +4,21 @@ import { Platform } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { authClient } from "@/lib/auth";
 
+const VALID_PROVIDERS = ["apple", "google"];
+
 export default function AuthPopupScreen() {
   const { provider } = useLocalSearchParams<{ provider: string }>();
 
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
-    if (!provider || !"[\"apple\", \"google\", \"email\"]".includes(provider)) {
+    if (!provider || !VALID_PROVIDERS.includes(provider)) {
+      console.error("[AuthPopup] Invalid provider:", provider);
       window.opener?.postMessage({ type: "oauth-error", error: "Invalid provider" }, "*");
       return;
     }
 
+    console.log("[AuthPopup] Starting OAuth for provider:", provider);
     authClient.signIn.social({
       provider: provider as any,
       callbackURL: `${window.location.origin}/auth-callback`,

@@ -24,7 +24,7 @@ import * as Clipboard from "expo-clipboard";
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const { themeColor, themeFont, anniversaryDate, inviteCode, refreshCouple, updateTheme } = useAppTheme();
+  const { themeColor, themeFont, anniversaryDate, inviteCode, refreshCouple } = useAppTheme();
   const { width } = useWindowDimensions();
 
   const [loading, setLoading] = useState(false);
@@ -37,6 +37,7 @@ export default function SettingsScreen() {
     anniversaryDate ? new Date(anniversaryDate) : new Date()
   );
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Email invite
   const [inviteEmail, setInviteEmail] = useState("");
@@ -53,7 +54,7 @@ export default function SettingsScreen() {
       try {
         const res = await authenticatedGet<{ phone: string | null; phone_verified: boolean }>("/api/2fa/status");
         console.log("[Settings] 2FA status:", res);
-        setTwoFaVerified(res.phone_verified);
+        setTwoFaVerified(res?.phone_verified ?? false);
       } catch (e) {
         console.error("[Settings] Failed to fetch 2FA status:", e);
         setTwoFaVerified(false);
@@ -61,6 +62,21 @@ export default function SettingsScreen() {
     };
     fetch2FAStatus();
   }, []);
+
+  // Sync local state when context values change (e.g. after initial load)
+  useEffect(() => {
+    setSelectedColor(themeColor);
+  }, [themeColor]);
+
+  useEffect(() => {
+    setSelectedFont(themeFont);
+  }, [themeFont]);
+
+  useEffect(() => {
+    if (anniversaryDate) {
+      setAnniversary(new Date(anniversaryDate));
+    }
+  }, [anniversaryDate]);
 
   const handleEmailInvite = async () => {
     if (!inviteEmail.trim()) {
@@ -90,18 +106,20 @@ export default function SettingsScreen() {
   const handleSave = async () => {
     console.log("[Settings] Save pressed, color:", selectedColor, "font:", selectedFont);
     setLoading(true);
+    setSaveError("");
     try {
       await authenticatedPatch("/api/couples/me", {
         theme_color: selectedColor,
         theme_font: selectedFont,
         anniversary_date: anniversary.toISOString().split("T")[0],
       });
-      await updateTheme(selectedColor, selectedFont);
+      // Refresh couple context so ThemeContext picks up the new values
       await refreshCouple();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
+    } catch (e: any) {
       console.error("[Settings] Save error:", e);
+      setSaveError(e?.message || "Failed to save changes");
     } finally {
       setLoading(false);
     }
@@ -109,6 +127,7 @@ export default function SettingsScreen() {
 
   const handleCopy = async () => {
     if (inviteCode) {
+      console.log("[Settings] Copy invite code pressed:", inviteCode);
       await Clipboard.setStringAsync(inviteCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -118,8 +137,12 @@ export default function SettingsScreen() {
   const handleSignOut = async () => {
     console.log("[Settings] Sign out confirmed");
     setShowSignOutModal(false);
-    await signOut();
-    router.replace("/auth-screen");
+    try {
+      await signOut();
+    } catch (e) {
+      console.error("[Settings] Sign out error:", e);
+    }
+    // NavigationGuard will redirect to auth-screen once user is null
   };
 
   return (
@@ -136,7 +159,10 @@ export default function SettingsScreen() {
             <Text style={{ fontSize: 16, fontWeight: "800", color: COLORS.text }}>Anniversary Date</Text>
           </View>
           <AnimatedPressable
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              console.log("[Settings] Date picker opened");
+              setShowDatePicker(true);
+            }}
             style={{
               backgroundColor: COLORS.surfaceAlt,
               borderRadius: 12,
@@ -158,7 +184,10 @@ export default function SettingsScreen() {
               maximumDate={new Date()}
               onChange={(_, date) => {
                 setShowDatePicker(false);
-                if (date) setAnniversary(date);
+                if (date) {
+                  console.log("[Settings] Anniversary date changed:", date.toISOString());
+                  setAnniversary(date);
+                }
               }}
             />
           )}
@@ -174,7 +203,10 @@ export default function SettingsScreen() {
             {THEME_COLORS.map((color) => (
               <Pressable
                 key={color}
-                onPress={() => setSelectedColor(color)}
+                onPress={() => {
+                  console.log("[Settings] Theme color selected:", color);
+                  setSelectedColor(color);
+                }}
                 style={{
                   width: 44,
                   height: 44,
@@ -203,7 +235,10 @@ export default function SettingsScreen() {
             {THEME_FONTS.map((font) => (
               <AnimatedPressable
                 key={font.key}
-                onPress={() => setSelectedFont(font.key)}
+                onPress={() => {
+                  console.log("[Settings] Font selected:", font.key);
+                  setSelectedFont(font.key);
+                }}
                 style={{
                   backgroundColor: selectedFont === font.key ? `${selectedColor}15` : COLORS.surfaceAlt,
                   borderRadius: 12,
@@ -349,6 +384,13 @@ export default function SettingsScreen() {
           <ChevronRight size={18} color={COLORS.textMuted} />
         </AnimatedPressable>
 
+        {/* Save Error */}
+        {saveError ? (
+          <Text style={{ color: COLORS.error, fontSize: 14, textAlign: "center" }}>
+            {saveError}
+          </Text>
+        ) : null}
+
         {/* Save Button */}
         <AnimatedPressable
           onPress={handleSave}
@@ -371,7 +413,10 @@ export default function SettingsScreen() {
 
         {/* Sign Out */}
         <AnimatedPressable
-          onPress={() => setShowSignOutModal(true)}
+          onPress={() => {
+            console.log("[Settings] Sign out button pressed");
+            setShowSignOutModal(true);
+          }}
           style={{
             backgroundColor: COLORS.surface,
             borderRadius: 16,

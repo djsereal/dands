@@ -32,6 +32,9 @@ export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
 
+// Routes that are accessible without authentication
+const PUBLIC_ROUTES = ["auth-screen", "auth-popup", "auth-callback"];
+
 function NavigationGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -39,11 +42,16 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (loading) return;
-    const inAuthScreen = segments[0] === "auth-screen";
-    const inAuthPopup = segments[0] === "auth-popup";
-    const inAuthCallback = segments[0] === "auth-callback";
-    if (!user && !inAuthScreen && !inAuthPopup && !inAuthCallback) {
+
+    const currentRoute = segments[0] as string | undefined;
+    const isPublicRoute = currentRoute ? PUBLIC_ROUTES.includes(currentRoute) : false;
+
+    if (!user && !isPublicRoute) {
+      console.log("[NavigationGuard] No user, redirecting to auth-screen from:", currentRoute);
       router.replace("/auth-screen");
+    } else if (user && currentRoute === "auth-screen") {
+      console.log("[NavigationGuard] User authenticated, redirecting to tabs");
+      router.replace("/(tabs)/(home)");
     }
   }, [user, loading, segments]);
 

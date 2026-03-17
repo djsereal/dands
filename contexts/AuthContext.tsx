@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
 
     const subscription = Linking.addEventListener("url", (event) => {
-      console.log("Deep link received, refreshing user session");
+      console.log("[Auth] Deep link received, refreshing user session:", event.url);
       fetchUser();
     });
 
@@ -97,13 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session.data.user as User);
         if (session.data.session?.token) {
           await setBearerToken(session.data.session.token);
+          console.log("[Auth] Session restored for user:", session.data.user.email);
         }
       } else {
         setUser(null);
         await clearAuthTokens();
       }
     } catch (error) {
-      console.error("Failed to fetch user:", error);
+      console.error("[Auth] Failed to fetch user:", error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -111,16 +112,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    await authClient.signIn.email({ email, password });
+    console.log("[Auth] Signing in with email:", email);
+    const result = await authClient.signIn.email({ email, password });
+    if (result?.error) {
+      console.error("[Auth] signInWithEmail error:", result.error);
+      throw new Error(result.error.message || "Sign in failed");
+    }
     await fetchUser();
   };
 
   const signUpWithEmail = async (email: string, password: string, name?: string) => {
-    await authClient.signUp.email({ email, password, name });
+    console.log("[Auth] Signing up with email:", email);
+    const result = await authClient.signUp.email({ email, password, name: name || "" });
+    if (result?.error) {
+      console.error("[Auth] signUpWithEmail error:", result.error);
+      throw new Error(result.error.message || "Sign up failed");
+    }
     await fetchUser();
   };
 
   const signInWithSocial = async (provider: string) => {
+    console.log("[Auth] Signing in with social provider:", provider);
     if (Platform.OS === "web") {
       const token = await openOAuthPopup(provider);
       await setBearerToken(token);
@@ -131,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         callbackURL: "dsappdesignedforcouples://auth-callback",
       });
       if (error) {
+        console.error("[Auth] Social sign in error:", error);
         throw new Error(error.message || "Social sign in failed");
       }
       await fetchUser();
@@ -141,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithApple = async () => {
     if (Platform.OS === "ios") {
-      // Native Apple Sign In on iOS — shows the system Face ID / password modal
+      console.log("[Auth] Native Apple Sign In");
       const AppleAuthentication = require("expo-apple-authentication");
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -157,20 +170,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: credential.identityToken,
       });
       if (error) {
+        console.error("[Auth] Apple native sign in error:", error);
         throw new Error(error.message || "Apple sign in failed");
       }
       await fetchUser();
     } else {
-      // Web / Android: OAuth redirect flow
       await signInWithSocial("apple");
     }
   };
 
   const signOut = async () => {
+    console.log("[Auth] Signing out");
     try {
       await authClient.signOut();
     } catch (error) {
-      console.error("Sign out failed (API):", error);
+      console.error("[Auth] Sign out API error:", error);
     } finally {
       setUser(null);
       await clearAuthTokens();
