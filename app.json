@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "Together",
+    "name": "D + S app: Designed for couples",
     "slug": "d-s-app-designed-for-couples",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon-bzy.png",
+    "icon": "./assets/images/app-icon-lxx.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/app-icon-bzy.png",
+      "image": "./assets/images/app-icon-lxx.png",
       "resizeMode": "contain",
       "backgroundColor": "#FF6B9D"
     },
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon-bzy.png",
+        "foregroundImage": "./assets/images/app-icon-lxx.png",
         "backgroundColor": "#FF6B9D"
       },
       "package": "com.placeholder.app"
